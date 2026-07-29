@@ -39,6 +39,10 @@ jobs:
           export SUBARCH=arm64
           export CROSS_COMPILE=$(pwd)/toolchain/bin/aarch64-linux-android-
           make -j$(nproc) 2>&1 | tee build_full.log
+          echo "===== كل الملفات الموجودة بمجلد boot ====="
+          find arch/arm64/boot/ -type f
+          echo "===== كل ملفات Image بالمشروع كامل ====="
+          find . -iname "Image*" -type f 2>/dev/null
 
       - name: Upload build log
         if: always()
@@ -48,8 +52,11 @@ jobs:
           path: build_full.log
 
       - name: Upload kernel image
-        if: success()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: kernel-output
-          path: arch/arm64/boot/Image.gz-dtb
+          path: |
+            arch/arm64/boot/Image.gz-dtb
+            arch/arm64/boot/Image.gz
+            arch/arm64/boot/Image
