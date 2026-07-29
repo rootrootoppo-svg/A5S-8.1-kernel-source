@@ -1,0 +1,36 @@
+name: Build Kernel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y bc bison build-essential ccache curl flex \
+          g++-multilib gcc-multilib git gnupg gperf libssl-dev \
+          liblz4-tool lzop zip zlib1g-dev
+
+      - name: Clone toolchain
+        run: |
+          git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 toolchain
+
+      - name: Build kernel
+        run: |
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CROSS_COMPILE=$(pwd)/toolchain/bin/aarch64-linux-android-
+          make oppo6765_18511_defconfig
+          make -j$(nproc)
+
+      - name: Upload kernel image
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-output
+          path: arch/arm64/boot/Image.gz-dtb
