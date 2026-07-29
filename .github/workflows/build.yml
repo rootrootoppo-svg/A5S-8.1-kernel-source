@@ -19,9 +19,8 @@ jobs:
 
       - name: Clone toolchain
         run: |
-          git clone --depth=1 https://github.com/mvaisakh/aarch64-linux-android-4.9 toolchain
-          ls -la toolchain/
-          ls -la toolchain/bin/ || echo "bin folder missing"
+          git clone --depth=1 https://github.com/djb77/aarch64-linux-android-4.9.git toolchain
+          ls -la toolchain/bin/
 
       - name: Verify defconfig exists
         run: |
