@@ -19,17 +19,13 @@ jobs:
 
       - name: Clone toolchain
         run: |
-          git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 toolchain
-          echo "===== محتويات مجلد bin ====="
-          ls -la toolchain/bin/
-          echo "===== التأكد من وجود الكومبايلر ====="
-          test -f toolchain/bin/aarch64-linux-android-gcc && echo "✅ الكومبايلر موجود" || echo "❌ الكومبايلر غير موجود"
+          git clone --depth=1 https://github.com/mvaisakh/aarch64-linux-android-4.9 toolchain
+          ls -la toolchain/
+          ls -la toolchain/bin/ || echo "bin folder missing"
 
       - name: Verify defconfig exists
         run: |
-          echo "===== البحث عن ملف الإعدادات ====="
           find arch/arm64/configs/ -iname "*oppo6765_18511*"
-          test -f arch/arm64/configs/oppo6765_18511_defconfig && echo "✅ ملف الإعدادات موجود" || echo "❌ ملف الإعدادات غير موجود"
 
       - name: Apply defconfig
         run: |
@@ -37,8 +33,6 @@ jobs:
           export SUBARCH=arm64
           export CROSS_COMPILE=$(pwd)/toolchain/bin/aarch64-linux-android-
           make oppo6765_18511_defconfig
-          echo "===== التأكد من إنشاء ملف .config ====="
-          test -f .config && echo "✅ .config تم إنشاؤه" || echo "❌ فشل إنشاء .config"
 
       - name: Build kernel
         run: |
@@ -46,15 +40,8 @@ jobs:
           export SUBARCH=arm64
           export CROSS_COMPILE=$(pwd)/toolchain/bin/aarch64-linux-android-
           make -j$(nproc) 2>&1 | tee build_full.log
-          echo "===== آخر 50 سطر من نتيجة البناء ====="
-          tail -n 50 build_full.log
 
-      - name: Check build output
-        run: |
-          echo "===== البحث عن ملف الكيرنل الناتج ====="
-          find arch/arm64/boot/ -iname "Image*" -o -iname "zImage*"
-
-      - name: Upload build log (always, even on failure)
+      - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
         with:
