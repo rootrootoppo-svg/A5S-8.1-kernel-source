@@ -21,6 +21,7 @@ jobs:
         run: |
           git clone --depth=1 https://github.com/djb77/aarch64-linux-android-4.9.git toolchain
           ls -la toolchain/bin/
+          test -f toolchain/bin/aarch64-linux-android-gcc && echo "COMPILER_OK" || echo "COMPILER_MISSING"
 
       - name: Verify defconfig exists
         run: |
@@ -32,17 +33,26 @@ jobs:
           export SUBARCH=arm64
           export CROSS_COMPILE=$(pwd)/toolchain/bin/aarch64-linux-android-
           make oppo6765_18511_defconfig
+          test -f .config && echo "CONFIG_OK" || echo "CONFIG_MISSING"
 
       - name: Build kernel
         run: |
+          set -o pipefail
           export ARCH=arm64
           export SUBARCH=arm64
           export CROSS_COMPILE=$(pwd)/toolchain/bin/aarch64-linux-android-
           make -j$(nproc) 2>&1 | tee build_full.log
-          echo "===== كل الملفات الموجودة بمجلد boot ====="
-          find arch/arm64/boot/ -type f
-          echo "===== كل ملفات Image بالمشروع كامل ====="
-          find . -iname "Image*" -type f 2>/dev/null
+          echo "BUILD_EXIT_CODE=$?" >> build_status.txt
+
+      - name: Show errors and summary
+        if: always()
+        run: |
+          echo "===== أسطر الخطأ (إن وجدت) ====="
+          grep -i -E "error|fatal|cannot find|no such file" build_full.log | head -n 40 || echo "لا يوجد سطر يحتوي كلمة Error"
+          echo "===== آخر 40 سطر من اللوق ====="
+          tail -n 40 build_full.log
+          echo "===== البحث عن ملف الكيرنل الناتج ====="
+          find . -iname "Image*" -newer .config -type f 2>/dev/null
 
       - name: Upload build log
         if: always()
@@ -60,3 +70,4 @@ jobs:
             arch/arm64/boot/Image.gz-dtb
             arch/arm64/boot/Image.gz
             arch/arm64/boot/Image
+          if-no-files-found: warn
